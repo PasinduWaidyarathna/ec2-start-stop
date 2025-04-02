@@ -25,6 +25,12 @@ if ! command -v aws &> /dev/null; then
     exit 1
 fi
 
+# Validate AWS configuration
+if [ ! -d ~/.aws ]; then
+    echo "AWS CLI is not configured. Please run 'aws configure' and try again."
+    exit 1
+fi
+
 # Validate action argument
 if [[ "$action" != "start" && "$action" != "stop" ]]; then
     echo "Invalid action. Use 'start' or 'stop'."
@@ -35,14 +41,14 @@ fi
 if [ "$action" == "start" ]; then
     echo "Starting EC2 instance: $instance_id in region: $aws_region..."
     aws ec2 start-instances --instance-ids $instance_id --region $aws_region
+    echo "Waiting for instance to start..."
+    aws ec2 wait instance-running --instance-ids $instance_id --region $aws_region
+    echo "Instance $instance_id is now running."
 elif [ "$action" == "stop" ]; then
     echo "Stopping EC2 instance: $instance_id in region: $aws_region..."
     aws ec2 stop-instances --instance-ids $instance_id --region $aws_region
+    echo "Waiting for instance to stop..."
+    aws ec2 wait instance-stopped --instance-ids $instance_id --region $aws_region
+    echo "Instance $instance_id is now stopped."
 fi
-
-# Wait for the instance to reach the desired state
-echo "Waiting for instance to reach '$action' state..."
-aws ec2 wait instance-$actioned --instance-ids $instance_id --region $aws_region
-
-echo "Instance $instance_id is now in '$action' state."
 
